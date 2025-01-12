@@ -44,10 +44,6 @@ const ShiptAutomation = () => {
       if (!initialized) {
         throw new Error('Failed to initialize automation');
       }
-      setProgress(20);
-
-      // Navigate to Shipt
-      await automationService.navigateToShipt();
       setProgress(40);
 
       // Parse grocery list into individual items
@@ -58,13 +54,13 @@ const ShiptAutomation = () => {
 
       setProgress(60);
 
-      // Search for products using Puppeteer
+      // Search for products using Edge Function
       const foundProducts = await automationService.searchProducts(items, selectedStore);
       setProducts(foundProducts);
       
       setProgress(80);
 
-      // Close browser
+      // Close automation
       await automationService.close();
       setProgress(100);
       setStatus('completed');

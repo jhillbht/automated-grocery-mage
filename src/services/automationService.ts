@@ -1,5 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
+interface Product {
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  description: string;
+}
+
 export class AutomationService {
   private credentials: { username: string | null; password: string | null } = {
     username: null,
@@ -51,7 +59,7 @@ export class AutomationService {
     }
   }
 
-  async searchProducts(items: string[], store: string) {
+  async searchProducts(items: string[], store: string): Promise<Product[]> {
     const { data, error } = await supabase.functions.invoke('shipt-automation', {
       body: {
         items,
