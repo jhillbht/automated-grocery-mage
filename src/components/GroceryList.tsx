@@ -2,9 +2,13 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
-const GroceryList = () => {
+interface GroceryListProps {
+  onSubmit?: (groceryList: string) => void;
+}
+
+const GroceryList: React.FC<GroceryListProps> = ({ onSubmit }) => {
   const [groceryList, setGroceryList] = React.useState('');
   const { toast } = useToast();
 
@@ -18,11 +22,15 @@ const GroceryList = () => {
       });
       return;
     }
-    // TODO: Handle grocery list submission
-    toast({
-      title: "Success",
-      description: "Grocery list saved successfully",
-    });
+    
+    if (onSubmit) {
+      onSubmit(groceryList);
+    } else {
+      toast({
+        title: "Success",
+        description: "Grocery list saved successfully",
+      });
+    }
   };
 
   return (
