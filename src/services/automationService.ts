@@ -15,25 +15,39 @@ export class AutomationService {
         .select('name, value')
         .in('name', ['SHIPT_USERNAME', 'SHIPT_PASSWORD']);
 
-      if (error) throw new Error('Failed to fetch credentials');
+      if (error) {
+        console.error('Error fetching credentials:', error);
+        throw new Error('Failed to fetch credentials from database');
+      }
 
-      const username = secrets?.find(s => s.name === 'SHIPT_USERNAME')?.value;
-      const password = secrets?.find(s => s.name === 'SHIPT_PASSWORD')?.value;
+      if (!secrets || secrets.length === 0) {
+        console.error('No credentials found in database');
+        throw new Error('Shipt credentials not found in database');
+      }
+
+      const username = secrets.find(s => s.name === 'SHIPT_USERNAME')?.value;
+      const password = secrets.find(s => s.name === 'SHIPT_PASSWORD')?.value;
 
       if (!username || !password) {
-        throw new Error('Shipt credentials not found');
+        console.error('Missing required credentials');
+        throw new Error('Both Shipt username and password are required');
+      }
+
+      if (username.trim() === '' || password.trim() === '') {
+        console.error('Empty credentials provided');
+        throw new Error('Shipt credentials cannot be empty');
       }
 
       this.credentials = { username, password };
+      console.log('Successfully loaded credentials for:', username);
 
       // Simulate connection delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.isConnected = true;
-      console.log('Mock browser initialized with credentials');
       return true;
     } catch (error) {
-      console.error('Failed to initialize mock browser:', error);
-      return false;
+      console.error('Failed to initialize automation:', error);
+      throw error;
     }
   }
 
@@ -45,15 +59,17 @@ export class AutomationService {
   }
 
   async navigateToShipt() {
-    if (!this.isConnected) throw new Error('Browser not initialized');
+    if (!this.isConnected) {
+      throw new Error('Browser not initialized');
+    }
+    
     if (!this.credentials.username || !this.credentials.password) {
       throw new Error('Missing Shipt credentials');
     }
 
     // Simulate navigation and login delay
     await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log('Mock navigation to Shipt completed with credentials:', 
-      this.credentials.username);
+    console.log('Successfully navigated to Shipt with user:', this.credentials.username);
   }
 }
 
