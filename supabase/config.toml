@@ -1,5 +1,4 @@
 project_id = "ccsqfaobfzngvmhpnogi"
 
-[functions]
 [functions.shipt-automation]
 verify_jwt = false

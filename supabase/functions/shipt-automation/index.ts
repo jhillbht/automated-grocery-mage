@@ -45,20 +45,13 @@ serve(async (req) => {
     // Get available stores with coordinates
     const stores = await page.evaluate(() => {
       const storeCards = document.querySelectorAll('[data-test="store-card"]')
-      return Array.from(storeCards).map(card => {
-        // Extract coordinates from the store location link
-        const locationLink = card.querySelector('[data-test="store-location-link"]')
-        const href = locationLink?.getAttribute('href') || ''
-        const coordsMatch = href.match(//@(-?\d+\.\d+),(-?\d+\.\d+)/)
-        
-        return {
-          name: card.querySelector('[data-test="store-name"]')?.textContent?.trim(),
-          address: card.querySelector('[data-test="store-address"]')?.textContent?.trim(),
-          image: card.querySelector('img')?.src,
-          latitude: coordsMatch ? parseFloat(coordsMatch[1]) : undefined,
-          longitude: coordsMatch ? parseFloat(coordsMatch[2]) : undefined
-        }
-      })
+      return Array.from(storeCards).map(card => ({
+        name: card.querySelector('[data-test="store-name"]')?.textContent?.trim() || '',
+        address: card.querySelector('[data-test="store-address"]')?.textContent?.trim() || '',
+        image: card.querySelector('img')?.src || '',
+        latitude: undefined,
+        longitude: undefined
+      }))
     })
     
     console.log(`Found ${stores.length} stores`)
