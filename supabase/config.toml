@@ -1,1 +1,9 @@
 project_id = "ccsqfaobfzngvmhpnogi"
+
+[api]
+enabled = true
+url = "https://ccsqfaobfzngvmhpnogi.supabase.co"
+
+[functions]
+[functions.shipt-automation]
+verify_jwt = false
