@@ -8,6 +8,18 @@ interface Product {
   description: string;
 }
 
+interface Store {
+  name: string;
+  address: string;
+  image: string;
+}
+
+interface ShiptResponse {
+  products: Product[];
+  stores: Store[];
+  selectedStore: Store;
+}
+
 export class AutomationService {
   private credentials: { username: string | null; password: string | null } = {
     username: null,
@@ -38,11 +50,7 @@ export class AutomationService {
       };
     } catch (error) {
       console.error('Error fetching credentials:', error);
-      // Fallback to demo credentials for development
-      return {
-        username: 'demo_user',
-        password: 'demo_password'
-      };
+      throw new Error('Failed to fetch Shipt credentials');
     }
   }
 
@@ -59,7 +67,7 @@ export class AutomationService {
     }
   }
 
-  async searchProducts(items: string[], store: string): Promise<Product[]> {
+  async searchProducts(items: string[], store: string): Promise<ShiptResponse> {
     const { data, error } = await supabase.functions.invoke('shipt-automation', {
       body: {
         items,
@@ -73,7 +81,7 @@ export class AutomationService {
       throw error;
     }
 
-    return data.products;
+    return data;
   }
 
   async close() {

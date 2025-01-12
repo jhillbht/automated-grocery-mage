@@ -14,23 +14,18 @@ interface Product {
 }
 
 interface Store {
-  id: string;
   name: string;
-  logo: string;
+  address: string;
+  image: string;
 }
-
-const STORES: Store[] = [
-  { id: 'target', name: 'Target', logo: 'https://placehold.co/50x50?text=T' },
-  { id: 'publix', name: 'Publix', logo: 'https://placehold.co/50x50?text=P' },
-  { id: 'kroger', name: 'Kroger', logo: 'https://placehold.co/50x50?text=K' },
-];
 
 const ShiptAutomation = () => {
   const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [selectedStore, setSelectedStore] = useState<string>('target');
   const { toast } = useToast();
 
   const handleGroceryList = async (groceryList: string) => {
@@ -55,8 +50,12 @@ const ShiptAutomation = () => {
       setProgress(60);
 
       // Search for products using Edge Function
-      const foundProducts = await automationService.searchProducts(items, selectedStore);
+      const { products: foundProducts, stores: foundStores, selectedStore: foundStore } = 
+        await automationService.searchProducts(items, selectedStore?.name || '');
+      
       setProducts(foundProducts);
+      setStores(foundStores);
+      setSelectedStore(foundStore);
       
       setProgress(80);
 
@@ -67,7 +66,7 @@ const ShiptAutomation = () => {
 
       toast({
         title: "Success",
-        description: `Found ${foundProducts.length} items at ${STORES.find(store => store.id === selectedStore)?.name}`,
+        description: `Found ${foundProducts.length} items at ${selectedStore?.name}`,
       });
     } catch (error) {
       console.error('Automation error:', error);
@@ -87,16 +86,27 @@ const ShiptAutomation = () => {
         <label htmlFor="store-select" className="text-sm font-medium">
           Select your store
         </label>
-        <Select value={selectedStore} onValueChange={setSelectedStore}>
-          <SelectTrigger className="w-full md:w-[200px]">
+        <Select 
+          value={selectedStore?.name || ''} 
+          onValueChange={(value) => {
+            const store = stores.find(s => s.name === value);
+            if (store) setSelectedStore(store);
+          }}
+        >
+          <SelectTrigger className="w-full md:w-[300px]">
             <SelectValue placeholder="Select a store" />
           </SelectTrigger>
           <SelectContent>
-            {STORES.map((store) => (
-              <SelectItem key={store.id} value={store.id}>
+            {stores.map((store) => (
+              <SelectItem key={store.name} value={store.name}>
                 <div className="flex items-center space-x-2">
-                  <img src={store.logo} alt={store.name} className="w-6 h-6 rounded" />
-                  <span>{store.name}</span>
+                  {store.image && (
+                    <img src={store.image} alt={store.name} className="w-6 h-6 rounded" />
+                  )}
+                  <div>
+                    <div>{store.name}</div>
+                    <div className="text-xs text-gray-500">{store.address}</div>
+                  </div>
                 </div>
               </SelectItem>
             ))}
@@ -105,6 +115,7 @@ const ShiptAutomation = () => {
       </div>
 
       <GroceryList onSubmit={handleGroceryList} />
+      
       <AutomationStatus 
         status={status} 
         progress={progress} 
