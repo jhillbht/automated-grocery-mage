@@ -2,24 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import GroceryList from './GroceryList';
 import AutomationStatus from './AutomationStatus';
+import StoreSelector from './store/StoreSelector';
+import ProductList from './products/ProductList';
 import { automationService } from '@/services/automationService';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface Product {
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  description: string;
-}
-
-interface Store {
-  name: string;
-  address: string;
-  image: string;
-  latitude?: number;
-  longitude?: number;
-}
+import { Product, Store, Location } from '@/types/shipt';
 
 const ShiptAutomation = () => {
   const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
@@ -28,11 +14,10 @@ const ShiptAutomation = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<Location | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Get user's location when component mounts
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -54,7 +39,6 @@ const ShiptAutomation = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Set default H-E-B store when stores are loaded
     if (stores.length > 0 && !selectedStore) {
       const hebStores = stores.filter(store => 
         store.name.toLowerCase().includes('h-e-b')
@@ -62,7 +46,6 @@ const ShiptAutomation = () => {
 
       if (hebStores.length > 0) {
         if (userLocation) {
-          // Find nearest H-E-B store based on location
           const nearestStore = findNearestStore(hebStores, userLocation);
           setSelectedStore(nearestStore);
           toast({
@@ -70,14 +53,13 @@ const ShiptAutomation = () => {
             description: `Selected nearest H-E-B at ${nearestStore.address}`,
           });
         } else {
-          // If no location, select first H-E-B store
           setSelectedStore(hebStores[0]);
         }
       }
     }
   }, [stores, userLocation, toast]);
 
-  const findNearestStore = (stores: Store[], location: { latitude: number; longitude: number }): Store => {
+  const findNearestStore = (stores: Store[], location: Location): Store => {
     return stores.reduce((nearest, store) => {
       if (!store.latitude || !store.longitude) return nearest;
       
@@ -117,14 +99,12 @@ const ShiptAutomation = () => {
       setProgress(0);
       setErrorMessage('');
 
-      // Initialize browser
       const initialized = await automationService.initialize();
       if (!initialized) {
         throw new Error('Failed to initialize automation');
       }
       setProgress(40);
 
-      // Parse grocery list into individual items
       const items = groceryList
         .split('\n')
         .map(item => item.trim())
@@ -132,7 +112,6 @@ const ShiptAutomation = () => {
 
       setProgress(60);
 
-      // Search for products using Edge Function
       const { products: foundProducts, stores: foundStores, selectedStore: foundStore } = 
         await automationService.searchProducts(items, selectedStore?.name || '');
       
@@ -143,8 +122,6 @@ const ShiptAutomation = () => {
       }
       
       setProgress(80);
-
-      // Close automation
       await automationService.close();
       setProgress(100);
       setStatus('completed');
@@ -167,38 +144,12 @@ const ShiptAutomation = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col space-y-4">
-        <label htmlFor="store-select" className="text-sm font-medium">
-          Select your store
-        </label>
-        <Select 
-          value={selectedStore?.name || ''} 
-          onValueChange={(value) => {
-            const store = stores.find(s => s.name === value);
-            if (store) setSelectedStore(store);
-          }}
-        >
-          <SelectTrigger className="w-full md:w-[300px]">
-            <SelectValue placeholder="Select a store" />
-          </SelectTrigger>
-          <SelectContent>
-            {stores.map((store) => (
-              <SelectItem key={store.name} value={store.name}>
-                <div className="flex items-center space-x-2">
-                  {store.image && (
-                    <img src={store.image} alt={store.name} className="w-6 h-6 rounded" />
-                  )}
-                  <div>
-                    <div>{store.name}</div>
-                    <div className="text-xs text-gray-500">{store.address}</div>
-                  </div>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
+      <StoreSelector 
+        stores={stores}
+        selectedStore={selectedStore}
+        onStoreSelect={setSelectedStore}
+      />
+      
       <GroceryList onSubmit={handleGroceryList} />
       
       <AutomationStatus 
@@ -208,43 +159,7 @@ const ShiptAutomation = () => {
       />
       
       {products.length > 0 && status === 'completed' && (
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-4">Found Products</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {products.map((product, index) => (
-              <div 
-                key={index}
-                className="flex flex-col bg-white rounded-lg shadow overflow-hidden"
-              >
-                <img 
-                  src={product.image} 
-                  alt={product.name}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4 space-y-2">
-                  <h4 className="font-semibold text-lg">{product.name}</h4>
-                  <p className="text-sm text-gray-600">{product.description}</p>
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="font-bold text-lg">
-                      ${product.price.toFixed(2)}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      Qty: {product.quantity}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div className="col-span-full mt-4 p-4 bg-white rounded-lg shadow">
-              <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span>
-                  ${products.reduce((sum, p) => sum + p.price, 0).toFixed(2)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProductList products={products} />
       )}
     </div>
   );

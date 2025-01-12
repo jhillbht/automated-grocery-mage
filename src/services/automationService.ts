@@ -1,18 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-
-interface Product {
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  description: string;
-}
-
-interface Store {
-  name: string;
-  address: string;
-  image: string;
-}
+import type { Product, Store } from '@/types/shipt';
 
 interface ShiptResponse {
   products: Product[];
@@ -65,7 +52,6 @@ export class AutomationService {
           password: passwordResponse.data.value
         };
 
-        // Validate credentials format
         if (!this.validateCredentials(credentials)) {
           throw new Error('Invalid credential format');
         }
@@ -78,7 +64,7 @@ export class AutomationService {
         console.error(`Attempt ${attempt} failed:`, lastError.message);
         
         if (attempt < retryCount) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff with 5s max
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
           console.log(`Retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
