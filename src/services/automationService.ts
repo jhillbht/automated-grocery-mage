@@ -51,7 +51,7 @@ export class AutomationService {
         throw new Error('Shipt credentials cannot be empty. Please update them in Supabase.');
       }
 
-      console.log('Successfully retrieved decrypted credentials from Supabase');
+      console.log('Successfully retrieved credentials from Supabase');
       return { username, password };
     } catch (error) {
       if (error instanceof Error) {
