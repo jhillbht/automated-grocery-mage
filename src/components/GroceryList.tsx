@@ -13,33 +13,44 @@ const GroceryList: React.FC<GroceryListProps> = ({ onSubmit }) => {
   const { toast } = useToast();
 
   const parseGroceryList = (text: string): string[] => {
-    // Split the text into lines and process each line
     const lines = text.split('\n');
     const items = new Set<string>();
 
+    // Common cooking instruction patterns to remove
+    const cookingInstructions = /\b(bake|boil|broil|cook|dice|fry|grill|heat|marinate|mince|mix|peel|roast|saute|season|simmer|slice|smoke|stir|toast)\w*\b|\b(at|for|until|about|or|the|to)\b|\d+°[FC]|\d+\s*(minutes?|mins?|hours?|hrs?)|internal temperature/gi;
+    
+    // Measurement patterns to optionally keep
+    const measurements = /\d+(\s*\/\s*\d+)?\s*(cup|cups|oz|ounce|ounces|lb|lbs|pound|pounds|g|gram|grams|kg|ml|tbsp|tablespoon|tablespoons|tsp|teaspoon|teaspoons)/i;
+
     lines.forEach(line => {
-      // Remove common markers and clean up the line
+      // Remove bullets, numbers, "Day X:", and colons
       const cleanLine = line
-        .replace(/^[-*•]|\d+\.|Day \d+:|:/g, '') // Remove bullets, numbers, "Day X:", and colons
+        .replace(/^[-*•]|\d+\.|Day \d+:|:/g, '')
         .trim();
 
       if (cleanLine) {
         // Split on common separators and extract ingredients
         const ingredients = cleanLine.split(/(?:with|,|and)/i)
           .map(item => item.trim())
-          .filter(item => 
-            item && 
-            !item.match(/^(at|for|until|about|or|the|to|[0-9]+°F|[0-9]+\s*minutes?|internal temperature)/i)
-          );
+          .filter(item => item && !item.match(/^(at|for|until|about|or|the|to)$/i));
 
         ingredients.forEach(ingredient => {
-          // Remove cooking instructions and measurements
-          const cleanIngredient = ingredient
-            .replace(/smoke[d]?\s+|season[ed]?\s+|marinate[d]?\s+|cook[ed]?\s+|for\s+.*|until\s+.*|with\s+.*/i, '')
-            .replace(/\(.*\)/g, '')
+          // Remove cooking instructions while preserving measurements
+          let cleanIngredient = ingredient
+            .replace(/\(.*\)/g, '') // Remove parenthetical notes
+            .replace(cookingInstructions, '') // Remove cooking instructions
             .trim();
 
-          if (cleanIngredient && cleanIngredient.length > 1) {
+          // Keep the measurement if it exists
+          const measurementMatch = cleanIngredient.match(measurements);
+          const itemWithoutMeasurement = cleanIngredient.replace(measurements, '').trim();
+          
+          if (itemWithoutMeasurement && itemWithoutMeasurement.length > 1) {
+            // If there was a measurement, add it back to the beginning
+            cleanIngredient = measurementMatch 
+              ? `${measurementMatch[0]} ${itemWithoutMeasurement}`
+              : itemWithoutMeasurement;
+            
             items.add(cleanIngredient);
           }
         });
