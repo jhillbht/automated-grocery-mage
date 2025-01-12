@@ -43,9 +43,9 @@ serve(async (req) => {
       const storeCards = document.querySelectorAll('[data-test="store-card"]')
       return Array.from(storeCards).map(card => {
         // Extract coordinates from the store location link
-        const locationLink = card.querySelector('[data-test="store-location-link"]');
-        const href = locationLink?.getAttribute('href') || '';
-        const coordsMatch = href.match(//@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        const locationLink = card.querySelector('[data-test="store-location-link"]')
+        const href = locationLink?.getAttribute('href') || ''
+        const coordsMatch = href.match(//@(-?\d+\.\d+),(-?\d+\.\d+)/)
         
         return {
           name: card.querySelector('[data-test="store-name"]')?.textContent?.trim(),
@@ -63,7 +63,7 @@ serve(async (req) => {
     const selectedStore = stores.find(s => 
       s.name?.toLowerCase().includes('h-e-b') || 
       s.name?.toLowerCase().includes(store.toLowerCase())
-    ) || stores[0];
+    ) || stores[0]
     
     if (!selectedStore) {
       throw new Error(`Store ${store} not found`)
