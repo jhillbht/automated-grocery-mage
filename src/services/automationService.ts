@@ -32,16 +32,21 @@ export class AutomationService {
         .from('secrets')
         .select('value')
         .eq('name', 'SHIPT_USERNAME')
-        .single();
+        .maybeSingle();
 
       const { data: passwordData, error: passwordError } = await supabase
         .from('secrets')
         .select('value')
         .eq('name', 'SHIPT_PASSWORD')
-        .single();
+        .maybeSingle();
 
       if (usernameError || passwordError) {
-        throw new Error('Failed to fetch credentials');
+        console.error('Error fetching credentials:', { usernameError, passwordError });
+        throw new Error('Failed to fetch credentials from database');
+      }
+
+      if (!usernameData || !passwordData) {
+        throw new Error('Shipt credentials not found. Please ensure both SHIPT_USERNAME and SHIPT_PASSWORD are set in secrets.');
       }
 
       return {
@@ -50,7 +55,7 @@ export class AutomationService {
       };
     } catch (error) {
       console.error('Error fetching credentials:', error);
-      throw new Error('Failed to fetch Shipt credentials');
+      throw new Error(error instanceof Error ? error.message : 'Failed to fetch Shipt credentials');
     }
   }
 
