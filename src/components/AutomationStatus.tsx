@@ -2,13 +2,20 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AutomationStatusProps {
   status: 'idle' | 'running' | 'completed' | 'error';
   progress: number;
+  errorMessage?: string;
 }
 
-const AutomationStatus: React.FC<AutomationStatusProps> = ({ status, progress }) => {
+const AutomationStatus: React.FC<AutomationStatusProps> = ({ 
+  status, 
+  progress,
+  errorMessage 
+}) => {
   const getStatusColor = () => {
     switch (status) {
       case 'running':
@@ -36,6 +43,15 @@ const AutomationStatus: React.FC<AutomationStatusProps> = ({ status, progress })
           <p className="text-sm text-muted-foreground text-center">
             {progress}% Complete
           </p>
+          
+          {status === 'error' && errorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {errorMessage}
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </CardContent>
     </Card>

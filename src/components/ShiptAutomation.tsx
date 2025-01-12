@@ -14,12 +14,14 @@ const ShiptAutomation = () => {
   const [status, setStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const { toast } = useToast();
 
   const handleGroceryList = async (groceryList: string) => {
     try {
       setStatus('running');
       setProgress(0);
+      setErrorMessage('');
 
       // Initialize browser
       const initialized = await automationService.initialize();
@@ -62,6 +64,7 @@ const ShiptAutomation = () => {
     } catch (error) {
       console.error('Automation error:', error);
       setStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : "Failed to process grocery list");
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to process grocery list",
@@ -73,7 +76,11 @@ const ShiptAutomation = () => {
   return (
     <div className="space-y-8">
       <GroceryList onSubmit={handleGroceryList} />
-      <AutomationStatus status={status} progress={progress} />
+      <AutomationStatus 
+        status={status} 
+        progress={progress} 
+        errorMessage={errorMessage}
+      />
       
       {products.length > 0 && status === 'completed' && (
         <div className="mt-8">
