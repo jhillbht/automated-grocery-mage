@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
 
 export class AutomationService {
   private browser: puppeteer.Browser | null = null;
@@ -6,8 +6,8 @@ export class AutomationService {
 
   async initialize() {
     try {
-      this.browser = await puppeteer.launch({
-        headless: false,
+      this.browser = await puppeteer.connect({
+        browserURL: 'http://localhost:9222', // Chrome DevTools Protocol endpoint
         defaultViewport: null,
       });
       this.page = await this.browser.newPage();
