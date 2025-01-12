@@ -45,13 +45,20 @@ serve(async (req) => {
     // Get available stores with coordinates
     const stores = await page.evaluate(() => {
       const storeCards = document.querySelectorAll('[data-test="store-card"]')
-      return Array.from(storeCards).map(card => ({
-        name: card.querySelector('[data-test="store-name"]')?.textContent?.trim() || '',
-        address: card.querySelector('[data-test="store-address"]')?.textContent?.trim() || '',
-        image: card.querySelector('img')?.src || '',
-        latitude: undefined,
-        longitude: undefined
-      }))
+      const storeList = Array.from(storeCards).map(card => {
+        const name = card.querySelector('[data-test="store-name"]')?.textContent?.trim() || ''
+        const address = card.querySelector('[data-test="store-address"]')?.textContent?.trim() || ''
+        const image = card.querySelector('img')?.src || ''
+        
+        return {
+          name,
+          address,
+          image,
+          latitude: undefined,
+          longitude: undefined
+        }
+      })
+      return storeList
     })
     
     console.log(`Found ${stores.length} stores`)
