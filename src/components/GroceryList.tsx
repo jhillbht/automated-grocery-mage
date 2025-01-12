@@ -41,8 +41,8 @@ const GroceryList = () => {
           <Button type="submit" className="w-full">
             Parse List
           </Button>
-        </CardContent>
-      </form>
+        </form>
+      </CardContent>
     </Card>
   );
 };
