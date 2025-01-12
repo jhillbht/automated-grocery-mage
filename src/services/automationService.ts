@@ -9,6 +9,15 @@ export class AutomationService {
   private maxRetries = 3;
 
   private async fetchCredentials(retryCount = 0): Promise<{ username: string; password: string }> {
+    // For demo purposes, return hardcoded credentials
+    console.log('Using hardcoded demo credentials');
+    return {
+      username: 'demo_user',
+      password: 'demo_password'
+    };
+
+    // Original Supabase implementation (commented out)
+    /*
     try {
       console.log(`Attempting to fetch credentials (attempt ${retryCount + 1}/${this.maxRetries})`);
       
@@ -35,14 +44,6 @@ export class AutomationService {
       const username = secrets.find(s => s.name === 'SHIPT_USERNAME')?.value;
       const password = secrets.find(s => s.name === 'SHIPT_PASSWORD')?.value;
 
-      // Log the presence of credentials (but not their values for security)
-      console.log('Credentials fetch result:', {
-        usernameFound: !!username,
-        passwordFound: !!password,
-        usernameLength: username?.length,
-        passwordLength: password?.length
-      });
-
       if (!username || !password) {
         throw new Error('Both Shipt username and password are required. Please check your credentials in Supabase.');
       }
@@ -59,6 +60,7 @@ export class AutomationService {
       }
       throw new Error('An unexpected error occurred while fetching credentials');
     }
+    */
   }
 
   async initialize() {
