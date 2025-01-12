@@ -46,17 +46,22 @@ export class AutomationService {
         const username = usernameResponse.data?.value;
         const password = passwordResponse.data?.value;
 
-        if (!username || !password || username.trim() === '' || password.trim() === '') {
-          throw new Error('Credentials are missing or empty. Please ensure both username and password are set.');
+        if (!username || !password) {
+          throw new Error('Credentials not found in database. Please ensure both SHIPT_USERNAME and SHIPT_PASSWORD are set.');
         }
 
-        const credentials = {
-          username: username.trim(),
-          password: password.trim()
-        };
+        const trimmedUsername = username.trim();
+        const trimmedPassword = password.trim();
+
+        if (trimmedUsername === '' || trimmedPassword === '') {
+          throw new Error('Credentials cannot be empty strings. Please ensure both username and password have valid values.');
+        }
 
         console.log('Successfully fetched and validated Shipt credentials');
-        return credentials;
+        return {
+          username: trimmedUsername,
+          password: trimmedPassword
+        };
 
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error occurred');
@@ -78,7 +83,7 @@ export class AutomationService {
       console.log('Initializing automation service...');
       const credentials = await this.fetchCredentials();
       this.credentials = credentials;
-      console.log('Successfully loaded and validated credentials');
+      console.log('Successfully initialized automation service with valid credentials');
       return true;
     } catch (error) {
       console.error('Failed to initialize automation:', error);
