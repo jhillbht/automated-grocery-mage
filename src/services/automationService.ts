@@ -1,34 +1,32 @@
-import * as puppeteer from 'puppeteer-core';
-
+// Mock implementation for frontend
 export class AutomationService {
-  private browser: puppeteer.Browser | null = null;
-  private page: puppeteer.Page | null = null;
+  private isConnected: boolean = false;
 
   async initialize() {
     try {
-      this.browser = await puppeteer.connect({
-        browserURL: 'http://localhost:9222', // Chrome DevTools Protocol endpoint
-        defaultViewport: null,
-      });
-      this.page = await this.browser.newPage();
+      // Simulate connection delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      this.isConnected = true;
+      console.log('Mock browser initialized');
       return true;
     } catch (error) {
-      console.error('Failed to initialize browser:', error);
+      console.error('Failed to initialize mock browser:', error);
       return false;
     }
   }
 
   async close() {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-      this.page = null;
-    }
+    // Simulate disconnection delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    this.isConnected = false;
+    console.log('Mock browser closed');
   }
 
   async navigateToShipt() {
-    if (!this.page) throw new Error('Browser not initialized');
-    await this.page.goto('https://shipt.com');
+    if (!this.isConnected) throw new Error('Browser not initialized');
+    // Simulate navigation delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log('Mock navigation to Shipt completed');
   }
 }
 
