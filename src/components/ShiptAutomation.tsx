@@ -19,7 +19,7 @@ interface Store {
   logo: string;
 }
 
-const MOCK_STORES: Store[] = [
+const STORES: Store[] = [
   { id: 'target', name: 'Target', logo: 'https://placehold.co/50x50?text=T' },
   { id: 'publix', name: 'Publix', logo: 'https://placehold.co/50x50?text=P' },
   { id: 'kroger', name: 'Kroger', logo: 'https://placehold.co/50x50?text=K' },
@@ -58,26 +58,20 @@ const ShiptAutomation = () => {
 
       setProgress(60);
 
-      // Mock product search and price extraction with images and descriptions
-      const foundProducts: Product[] = items.map(item => ({
-        name: item,
-        price: Math.random() * 10 + 1,
-        quantity: 1,
-        image: `https://placehold.co/200x200?text=${encodeURIComponent(item)}`,
-        description: `Fresh ${item} from ${MOCK_STORES.find(store => store.id === selectedStore)?.name}`
-      }));
-
+      // Search for products using Puppeteer
+      const foundProducts = await automationService.searchProducts(items, selectedStore);
       setProducts(foundProducts);
+      
       setProgress(80);
 
-      // Mock adding items to cart
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Close browser
+      await automationService.close();
       setProgress(100);
       setStatus('completed');
 
       toast({
         title: "Success",
-        description: `Added ${items.length} items to cart at ${MOCK_STORES.find(store => store.id === selectedStore)?.name}`,
+        description: `Found ${foundProducts.length} items at ${STORES.find(store => store.id === selectedStore)?.name}`,
       });
     } catch (error) {
       console.error('Automation error:', error);
@@ -102,7 +96,7 @@ const ShiptAutomation = () => {
             <SelectValue placeholder="Select a store" />
           </SelectTrigger>
           <SelectContent>
-            {MOCK_STORES.map((store) => (
+            {STORES.map((store) => (
               <SelectItem key={store.id} value={store.id}>
                 <div className="flex items-center space-x-2">
                   <img src={store.logo} alt={store.name} className="w-6 h-6 rounded" />
