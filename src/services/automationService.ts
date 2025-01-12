@@ -15,52 +15,6 @@ export class AutomationService {
       username: 'demo_user',
       password: 'demo_password'
     };
-
-    // Original Supabase implementation (commented out)
-    /*
-    try {
-      console.log(`Attempting to fetch credentials (attempt ${retryCount + 1}/${this.maxRetries})`);
-      
-      const { data: secrets, error } = await supabase
-        .from('secrets')
-        .select('name, value')
-        .in('name', ['SHIPT_USERNAME', 'SHIPT_PASSWORD']);
-
-      if (error) {
-        console.error('Database error:', error);
-        throw new Error(`Failed to connect to database: ${error.message}`);
-      }
-
-      if (!secrets || secrets.length === 0) {
-        if (retryCount < this.maxRetries) {
-          const delay = 1000 * (retryCount + 1);
-          console.log(`No credentials found. Retrying in ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return this.fetchCredentials(retryCount + 1);
-        }
-        throw new Error('Shipt credentials not found in database. Please add them in the Supabase settings.');
-      }
-
-      const username = secrets.find(s => s.name === 'SHIPT_USERNAME')?.value;
-      const password = secrets.find(s => s.name === 'SHIPT_PASSWORD')?.value;
-
-      if (!username || !password) {
-        throw new Error('Both Shipt username and password are required. Please check your credentials in Supabase.');
-      }
-
-      if (username.trim() === '' || password.trim() === '') {
-        throw new Error('Shipt credentials cannot be empty. Please update them in Supabase.');
-      }
-
-      console.log('Successfully retrieved credentials from Supabase');
-      return { username, password };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('An unexpected error occurred while fetching credentials');
-    }
-    */
   }
 
   async initialize() {
