@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import GroceryList from './GroceryList';
 import AutomationStatus from './AutomationStatus';
 import StoreSelector from './store/StoreSelector';
 import ProductList from './products/ProductList';
+import LocationHandler from './automation/LocationHandler';
+import StoreHandler from './automation/StoreHandler';
 import { automationService } from '@/services/automationService';
 import { Product, Store, Location } from '@/types/shipt';
 
@@ -16,82 +18,6 @@ const ShiptAutomation = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [userLocation, setUserLocation] = useState<Location | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          toast({
-            title: "Location Error",
-            description: "Unable to get your location. Defaulting to first H-E-B store.",
-            variant: "destructive",
-          });
-        }
-      );
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    if (stores.length > 0 && !selectedStore) {
-      const hebStores = stores.filter(store => 
-        store.name.toLowerCase().includes('h-e-b')
-      );
-
-      if (hebStores.length > 0) {
-        if (userLocation) {
-          const nearestStore = findNearestStore(hebStores, userLocation);
-          setSelectedStore(nearestStore);
-          toast({
-            title: "Store Selected",
-            description: `Selected nearest H-E-B at ${nearestStore.address}`,
-          });
-        } else {
-          setSelectedStore(hebStores[0]);
-        }
-      }
-    }
-  }, [stores, userLocation, toast]);
-
-  const findNearestStore = (stores: Store[], location: Location): Store => {
-    return stores.reduce((nearest, store) => {
-      if (!store.latitude || !store.longitude) return nearest;
-      
-      const distance = calculateDistance(
-        location.latitude,
-        location.longitude,
-        store.latitude,
-        store.longitude
-      );
-      
-      const nearestDistance = calculateDistance(
-        location.latitude,
-        location.longitude,
-        nearest.latitude!,
-        nearest.longitude!
-      );
-      
-      return distance < nearestDistance ? store : nearest;
-    }, stores[0]);
-  };
-
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Earth's radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
 
   const handleGroceryList = async (groceryList: string) => {
     try {
@@ -144,6 +70,15 @@ const ShiptAutomation = () => {
 
   return (
     <div className="space-y-8">
+      <LocationHandler onLocationUpdate={setUserLocation} />
+      
+      <StoreHandler
+        stores={stores}
+        selectedStore={selectedStore}
+        userLocation={userLocation}
+        onStoreSelect={setSelectedStore}
+      />
+      
       <StoreSelector 
         stores={stores}
         selectedStore={selectedStore}
