@@ -26,37 +26,75 @@ export class AutomationService {
     password: null,
   };
 
-  private async fetchCredentials(): Promise<{ username: string; password: string }> {
-    try {
-      const { data: usernameData, error: usernameError } = await supabase
-        .from('secrets')
-        .select('value')
-        .eq('name', 'SHIPT_USERNAME')
-        .maybeSingle();
+  private async fetchCredentials(retryCount = 3): Promise<{ username: string; password: string }> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
+      try {
+        console.log(`Attempt ${attempt} of ${retryCount} to fetch Shipt credentials`);
+        
+        const [usernameResponse, passwordResponse] = await Promise.all([
+          supabase
+            .from('secrets')
+            .select('value')
+            .eq('name', 'SHIPT_USERNAME')
+            .maybeSingle(),
+          supabase
+            .from('secrets')
+            .select('value')
+            .eq('name', 'SHIPT_PASSWORD')
+            .maybeSingle()
+        ]);
 
-      const { data: passwordData, error: passwordError } = await supabase
-        .from('secrets')
-        .select('value')
-        .eq('name', 'SHIPT_PASSWORD')
-        .maybeSingle();
+        if (usernameResponse.error) {
+          console.error('Error fetching username:', usernameResponse.error);
+          throw new Error(`Failed to fetch username: ${usernameResponse.error.message}`);
+        }
 
-      if (usernameError || passwordError) {
-        console.error('Error fetching credentials:', { usernameError, passwordError });
-        throw new Error('Failed to fetch credentials from database');
+        if (passwordResponse.error) {
+          console.error('Error fetching password:', passwordResponse.error);
+          throw new Error(`Failed to fetch password: ${passwordResponse.error.message}`);
+        }
+
+        if (!usernameResponse.data || !passwordResponse.data) {
+          throw new Error('Credentials not found in database');
+        }
+
+        const credentials = {
+          username: usernameResponse.data.value,
+          password: passwordResponse.data.value
+        };
+
+        // Validate credentials format
+        if (!this.validateCredentials(credentials)) {
+          throw new Error('Invalid credential format');
+        }
+
+        console.log('Successfully fetched and validated Shipt credentials');
+        return credentials;
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error occurred');
+        console.error(`Attempt ${attempt} failed:`, lastError.message);
+        
+        if (attempt < retryCount) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff with 5s max
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-
-      if (!usernameData || !passwordData) {
-        throw new Error('Shipt credentials not found. Please ensure both SHIPT_USERNAME and SHIPT_PASSWORD are set in secrets.');
-      }
-
-      return {
-        username: usernameData.value,
-        password: passwordData.value
-      };
-    } catch (error) {
-      console.error('Error fetching credentials:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch Shipt credentials');
     }
+
+    throw new Error(`Failed to fetch Shipt credentials after ${retryCount} attempts. Last error: ${lastError?.message}`);
+  }
+
+  private validateCredentials(credentials: { username: string; password: string }): boolean {
+    return (
+      typeof credentials.username === 'string' &&
+      typeof credentials.password === 'string' &&
+      credentials.username.length > 0 &&
+      credentials.password.length > 0
+    );
   }
 
   async initialize() {
@@ -73,6 +111,10 @@ export class AutomationService {
   }
 
   async searchProducts(items: string[], store: string): Promise<ShiptResponse> {
+    if (!this.credentials.username || !this.credentials.password) {
+      throw new Error('Automation service not properly initialized. Please ensure credentials are set.');
+    }
+
     const { data, error } = await supabase.functions.invoke('shipt-automation', {
       body: {
         items,
