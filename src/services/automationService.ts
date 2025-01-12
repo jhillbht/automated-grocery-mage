@@ -10,6 +10,8 @@ export class AutomationService {
 
   private async fetchCredentials(retryCount = 0): Promise<{ username: string; password: string }> {
     try {
+      console.log(`Attempting to fetch credentials (attempt ${retryCount + 1}/${this.maxRetries})`);
+      
       const { data: secrets, error } = await supabase
         .from('secrets')
         .select('name, value')
@@ -22,8 +24,9 @@ export class AutomationService {
 
       if (!secrets || secrets.length === 0) {
         if (retryCount < this.maxRetries) {
-          console.log(`Retry attempt ${retryCount + 1} of ${this.maxRetries}`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+          const delay = 1000 * (retryCount + 1);
+          console.log(`No credentials found. Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
           return this.fetchCredentials(retryCount + 1);
         }
         throw new Error('Shipt credentials not found in database. Please add them in the Supabase settings.');
@@ -31,6 +34,14 @@ export class AutomationService {
 
       const username = secrets.find(s => s.name === 'SHIPT_USERNAME')?.value;
       const password = secrets.find(s => s.name === 'SHIPT_PASSWORD')?.value;
+
+      // Log the presence of credentials (but not their values for security)
+      console.log('Credentials fetch result:', {
+        usernameFound: !!username,
+        passwordFound: !!password,
+        usernameLength: username?.length,
+        passwordLength: password?.length
+      });
 
       if (!username || !password) {
         throw new Error('Both Shipt username and password are required. Please check your credentials in Supabase.');
@@ -40,6 +51,7 @@ export class AutomationService {
         throw new Error('Shipt credentials cannot be empty. Please update them in Supabase.');
       }
 
+      console.log('Successfully retrieved decrypted credentials from Supabase');
       return { username, password };
     } catch (error) {
       if (error instanceof Error) {
@@ -56,7 +68,7 @@ export class AutomationService {
       const credentials = await this.fetchCredentials();
       this.credentials = credentials;
       
-      console.log('Successfully loaded credentials');
+      console.log('Successfully loaded and validated credentials');
       
       // Simulate connection delay
       await new Promise(resolve => setTimeout(resolve, 1000));
