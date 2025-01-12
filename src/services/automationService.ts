@@ -43,8 +43,8 @@ export class AutomationService {
           throw new Error(`Failed to fetch password: ${passwordResponse.error.message}`);
         }
 
-        if (!usernameResponse.data || !passwordResponse.data) {
-          throw new Error('Credentials not found in database');
+        if (!usernameResponse.data?.value || !passwordResponse.data?.value) {
+          throw new Error('Credentials not found or empty in database');
         }
 
         const credentials = {
@@ -52,11 +52,7 @@ export class AutomationService {
           password: passwordResponse.data.value
         };
 
-        if (!this.validateCredentials(credentials)) {
-          throw new Error('Invalid credential format');
-        }
-
-        console.log('Successfully fetched and validated Shipt credentials');
+        console.log('Successfully fetched Shipt credentials');
         return credentials;
 
       } catch (error) {
@@ -72,15 +68,6 @@ export class AutomationService {
     }
 
     throw new Error(`Failed to fetch Shipt credentials after ${retryCount} attempts. Last error: ${lastError?.message}`);
-  }
-
-  private validateCredentials(credentials: { username: string; password: string }): boolean {
-    return (
-      typeof credentials.username === 'string' &&
-      typeof credentials.password === 'string' &&
-      credentials.username.length > 0 &&
-      credentials.password.length > 0
-    );
   }
 
   async initialize() {
@@ -101,6 +88,7 @@ export class AutomationService {
       throw new Error('Automation service not properly initialized. Please ensure credentials are set.');
     }
 
+    console.log('Calling Shipt automation with store:', store);
     const { data, error } = await supabase.functions.invoke('shipt-automation', {
       body: {
         items,
@@ -114,6 +102,7 @@ export class AutomationService {
       throw error;
     }
 
+    console.log('Successfully retrieved products from Shipt');
     return data;
   }
 
