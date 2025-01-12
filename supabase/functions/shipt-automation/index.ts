@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +14,10 @@ serve(async (req) => {
   try {
     const { items, store, credentials } = await req.json()
     console.log('Starting Shipt automation for store:', store)
+
+    if (!credentials?.username || !credentials?.password) {
+      throw new Error('Shipt credentials not found. Please ensure both SHIPT_USERNAME and SHIPT_PASSWORD are set in secrets.')
+    }
 
     const browser = await puppeteer.launch({ 
       headless: true,
@@ -35,7 +39,7 @@ serve(async (req) => {
     console.log('Successfully logged in')
 
     // Navigate to store selection
-    await page.goto(`https://shop.shipt.com/stores`)
+    await page.goto('https://shop.shipt.com/stores')
     await page.waitForSelector('[data-test="store-card"]')
     
     // Get available stores with coordinates
@@ -70,7 +74,7 @@ serve(async (req) => {
     }
 
     // Navigate to store page
-    await page.goto(`https://shop.shipt.com/store/${store}`)
+    await page.goto(`https://shop.shipt.com/store/${selectedStore.name}`)
     await page.waitForSelector('[data-test="product-card"]')
 
     const products = []
