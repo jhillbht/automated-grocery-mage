@@ -43,16 +43,19 @@ export class AutomationService {
           throw new Error(`Failed to fetch password: ${passwordResponse.error.message}`);
         }
 
-        if (!usernameResponse.data?.value || !passwordResponse.data?.value) {
-          throw new Error('Credentials not found or empty in database');
+        const username = usernameResponse.data?.value;
+        const password = passwordResponse.data?.value;
+
+        if (!username || !password || username.trim() === '' || password.trim() === '') {
+          throw new Error('Credentials are missing or empty. Please ensure both username and password are set.');
         }
 
         const credentials = {
-          username: usernameResponse.data.value,
-          password: passwordResponse.data.value
+          username: username.trim(),
+          password: password.trim()
         };
 
-        console.log('Successfully fetched Shipt credentials');
+        console.log('Successfully fetched and validated Shipt credentials');
         return credentials;
 
       } catch (error) {
