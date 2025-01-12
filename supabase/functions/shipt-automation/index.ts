@@ -38,20 +38,33 @@ serve(async (req) => {
     await page.goto(`https://shop.shipt.com/stores`)
     await page.waitForSelector('[data-test="store-card"]')
     
-    // Get available stores
+    // Get available stores with coordinates
     const stores = await page.evaluate(() => {
       const storeCards = document.querySelectorAll('[data-test="store-card"]')
-      return Array.from(storeCards).map(card => ({
-        name: card.querySelector('[data-test="store-name"]')?.textContent?.trim(),
-        address: card.querySelector('[data-test="store-address"]')?.textContent?.trim(),
-        image: card.querySelector('img')?.src
-      }))
+      return Array.from(storeCards).map(card => {
+        // Extract coordinates from the store location link
+        const locationLink = card.querySelector('[data-test="store-location-link"]');
+        const href = locationLink?.getAttribute('href') || '';
+        const coordsMatch = href.match(//@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        
+        return {
+          name: card.querySelector('[data-test="store-name"]')?.textContent?.trim(),
+          address: card.querySelector('[data-test="store-address"]')?.textContent?.trim(),
+          image: card.querySelector('img')?.src,
+          latitude: coordsMatch ? parseFloat(coordsMatch[1]) : undefined,
+          longitude: coordsMatch ? parseFloat(coordsMatch[2]) : undefined
+        }
+      })
     })
     
     console.log(`Found ${stores.length} stores`)
 
-    // Select the first store matching our store parameter
-    const selectedStore = stores.find(s => s.name?.toLowerCase().includes(store.toLowerCase()))
+    // Select the first store matching our store parameter, preferring H-E-B
+    const selectedStore = stores.find(s => 
+      s.name?.toLowerCase().includes('h-e-b') || 
+      s.name?.toLowerCase().includes(store.toLowerCase())
+    ) || stores[0];
+    
     if (!selectedStore) {
       throw new Error(`Store ${store} not found`)
     }
